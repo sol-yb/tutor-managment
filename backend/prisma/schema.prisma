@@ -172,6 +172,7 @@ model Student {
   requests        TutoringRequest[]
   engagements     TutoringEngagement[]
   progressReports ProgressReport[]
+  homeworkSubmissions HomeworkSubmission[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   @@index([familyId])
@@ -243,9 +244,21 @@ model TutorApplication {
   reviewedAt     DateTime?
   submittedAt    DateTime?
   tutor          Tutor                   @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  history        TutorApplicationHistory[]
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
   @@index([status, createdAt])
+}
+
+model TutorApplicationHistory {
+  id            String                  @id @default(cuid())
+  applicationId String
+  status        TutorApplicationStatus
+  reason        String?
+  changedById   String?
+  createdAt     DateTime                @default(now())
+  application   TutorApplication        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  @@index([applicationId, createdAt])
 }
 
 model TutorAvailability {
@@ -344,6 +357,7 @@ model TutoringEngagement {
   reviews      Review[]
   payments     Payment[]
   earnings     TutorEarning[]
+  lessonSeries LessonSeries[]
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 }
@@ -361,6 +375,20 @@ model Lesson {
   homework      Homework[]
   createdAt     DateTime     @default(now())
   @@index([engagementId, scheduledStart])
+}
+
+model LessonSeries {
+  id             String             @id @default(cuid())
+  engagementId   String
+  title          String
+  startAt        DateTime
+  endAt          DateTime
+  recurrenceRule String
+  timezone       String             @default("UTC")
+  engagement     TutoringEngagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  @@index([engagementId, startAt])
 }
 
 model Attendance {
@@ -394,11 +422,13 @@ model Homework {
 model HomeworkSubmission {
   id          String   @id @default(cuid())
   homeworkId  String
+  studentId   String?
   content     String?
   submittedAt DateTime @default(now())
   grade       String?
   feedback    String?
   homework    Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  student     Student? @relation(fields: [studentId], references: [id])
 }
 
 model ProgressReport {
